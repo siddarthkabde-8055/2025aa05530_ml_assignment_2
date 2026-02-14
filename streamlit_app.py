@@ -33,79 +33,85 @@ page = st.sidebar.radio("Select a page:", ["Home", "Model Training"])
 # HOME
 # ---------------------------------------------------
 if page == "Home":
-    st.title("ML Assignment 2 — Classification Models")
 
-    st.write(
+    st.header("ML Assignment 2 — Classification Models")
+
+    st.caption(
         "Train and evaluate **6 classification models** on the **UCI Dry Bean dataset** "
         "or using your own uploaded CSV file."
     )
 
-    st.divider()
+    st.markdown("### ✅ Required Features (Assignment)")
 
-    st.subheader("✅ Required Features (Assignment)")
+    st.markdown(
+        """
+        - **A. Dataset upload option (CSV)**
+        - **B. Model selection dropdown (multiple models)**
+        - **C. Display of evaluation metrics**
+        - **D. Confusion matrix / classification report**
+        """
+    )
 
-    st.write("**A. Dataset upload option (CSV)**")
-    st.write("**B. Model selection dropdown (multiple models)**")
-    st.write("**C. Display of evaluation metrics**")
-    st.write("**D. Confusion matrix / classification report**")
-
-    st.divider()
     st.info("➡️ Go to **Model Training** page to start.")
+
 
 # ---------------------------------------------------
 # MODEL TRAINING
 # ---------------------------------------------------
 elif page == "Model Training":
 
-    st.title("Model Training")
+    st.header("Model Training")
 
     # ==========================================================
     # A. Dataset upload option (CSV)
     # ==========================================================
     st.subheader("A. Dataset upload option (CSV)")
 
-    # Small test data download (simple + clean)
-    if os.path.exists(TEST_DATA_PATH):
-        with open(TEST_DATA_PATH, "rb") as f:
-            st.download_button(
-                label="⬇️ Download test_data.csv (for upload testing)",
-                data=f,
-                file_name="test_data.csv",
-                mime="text/csv",
-                use_container_width=True
-            )
-    else:
-        st.warning(
-            "test_data.csv not found in `/data` folder.\n\n"
-            "Please add `data/test_data.csv` to your GitHub project."
+    # -----------------------------
+    # Row layout (LEFT = main flow, RIGHT = helper download)
+    # -----------------------------
+    left_col, right_col = st.columns([3, 2])
+
+    with right_col:
+        st.markdown("#### 📥 Test CSV (Quick Download)")
+        st.caption("Use this file to test the CSV upload feature.")
+
+        if os.path.exists(TEST_DATA_PATH):
+            with open(TEST_DATA_PATH, "rb") as f:
+                st.download_button(
+                    label="⬇️ Download test_data.csv",
+                    data=f,
+                    file_name="test_data.csv",
+                    mime="text/csv"
+                )
+        else:
+            st.warning("Missing: `data/test_data.csv`")
+
+    with left_col:
+        dataset_source = st.radio(
+            "Choose dataset source:",
+            ["UCI Dry Bean Dataset (Recommended)", "Upload CSV"],
+            horizontal=True
         )
 
-    st.divider()
+        df = None
 
-    dataset_source = st.radio(
-        "Choose dataset source:",
-        ["UCI Dry Bean Dataset (Recommended)", "Upload CSV"],
-        horizontal=True
-    )
+        # -----------------------------
+        # Load dataset
+        # -----------------------------
+        if dataset_source == "UCI Dry Bean Dataset (Recommended)":
+            if st.button("📥 Load Dry Bean Dataset from UCI", type="primary"):
+                with st.spinner("Loading dataset from UCI..."):
+                    df = load_drybean_from_uci()
+                    st.session_state.df = df
 
-    df = None
+        else:
+            uploaded_file = st.file_uploader("Upload CSV file", type="csv")
 
-    # -----------------------------
-    # Load dataset
-    # -----------------------------
-    if dataset_source == "UCI Dry Bean Dataset (Recommended)":
-        if st.button("📥 Load Dry Bean Dataset from UCI", use_container_width=True):
-            with st.spinner("Loading dataset from UCI..."):
-                df = load_drybean_from_uci()
-                st.session_state.df = df
-
-    else:
-        uploaded_file = st.file_uploader("Upload CSV file", type="csv")
-
-        if uploaded_file is not None:
-            with st.spinner("Reading uploaded CSV..."):
-                df = pd.read_csv(uploaded_file)
-                st.session_state.df = df
+            if uploaded_file is not None:
+                with st.spinner("Reading uploaded CSV..."):
+                    df = pd.read_csv(uploaded_file)
+                    st.session_state.df = df
 
     # Use session state only after user loads/upload
     if "df" in st.session_state:
@@ -117,8 +123,10 @@ elif page == "Model Training":
 
     st.success("Dataset loaded successfully ✅")
 
+    st.divider()
+
     # ==========================================================
-    # Dataset details (minimal, not clumsy)
+    # Dataset details
     # ==========================================================
     with st.expander("Dataset Preview + Health Check", expanded=False):
         st.write("Shape:", df.shape)
@@ -139,23 +147,15 @@ elif page == "Model Training":
     )
 
     # ==========================================================
-    # Training Options (simple)
+    # Prepare data (NO training options)
     # ==========================================================
-    st.subheader("Training Options")
+    # Fixed defaults (since training options removed)
+    test_size = 0.2
+    remove_duplicates = True
+    drop_missing = True
 
-    col1, col2 = st.columns([1, 2])
-
-    with col1:
-        test_size = st.slider("Test size", 0.1, 0.5, 0.2)
-
-    with col2:
-        remove_duplicates = st.checkbox("Remove duplicates", value=True)
-        drop_missing = st.checkbox("Drop missing rows", value=True)
-
-    # Scaling rule
     scale_features = model_choice in ["Logistic Regression", "kNN"]
 
-    # Prepare data
     X_train, X_test, y_train, y_test, scaler, le, target_col, df_clean = prepare_data(
         df,
         test_size=test_size,
@@ -164,14 +164,14 @@ elif page == "Model Training":
         drop_missing=drop_missing
     )
 
-    st.caption(f"Cleaned dataset shape: {df_clean.shape}")
+    st.caption(f"Cleaned dataset shape: {df_clean.shape} | Test split: {int(test_size * 100)}%")
 
     st.divider()
 
     # ==========================================================
     # Train button
     # ==========================================================
-    train_one = st.button("🚀 Train Selected Model", use_container_width=True)
+    train_one = st.button("🚀 Train Selected Model", type="primary", use_container_width=True)
 
     # ==========================================================
     # Train selected model output
