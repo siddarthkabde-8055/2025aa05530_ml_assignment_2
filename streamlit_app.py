@@ -169,15 +169,9 @@ elif page == "Model Training":
     st.divider()
 
     # ==========================================================
-    # Train buttons
+    # Train button
     # ==========================================================
-    colT1, colT2 = st.columns([1, 1])
-
-    with colT1:
-        train_one = st.button("🚀 Train Selected Model", use_container_width=True)
-
-    with colT2:
-        train_all = st.button("📊 Train All 6 Models", use_container_width=True)
+    train_one = st.button("🚀 Train Selected Model", use_container_width=True)
 
     # ==========================================================
     # Train selected model output
@@ -222,43 +216,3 @@ elif page == "Model Training":
         with tab2:
             report_df = get_classification_report_df(y_test, y_test_pred)
             st.dataframe(report_df, use_container_width=True)
-
-    # ==========================================================
-    # Train all models output
-    # ==========================================================
-    if train_all:
-        with st.spinner("Training all 6 models... Please wait..."):
-            all_results = []
-
-            for m in get_model_list():
-                scale_features_loop = m in ["Logistic Regression", "kNN"]
-
-                X_train, X_test, y_train, y_test, _, _, _, _ = prepare_data(
-                    df,
-                    test_size=test_size,
-                    scale_features=scale_features_loop,
-                    remove_duplicates=remove_duplicates,
-                    drop_missing=drop_missing
-                )
-
-                _, res, _ = train_selected_model(m, X_train, y_train, X_test, y_test)
-                res["Model"] = m
-                all_results.append(res)
-
-            df_results = pd.DataFrame(all_results)
-            df_results = df_results[["Model", "Accuracy", "AUC", "Precision", "Recall", "F1", "MCC"]]
-            df_results = df_results.round(4)
-
-        st.success("All models trained successfully ✅")
-
-        st.subheader("📊 Model Comparison Table")
-        st.dataframe(df_results, use_container_width=True)
-
-        csv = df_results.to_csv(index=False).encode("utf-8")
-        st.download_button(
-            label="⬇️ Download Comparison Table as CSV",
-            data=csv,
-            file_name="model_comparison_results.csv",
-            mime="text/csv",
-            use_container_width=True
-        )
