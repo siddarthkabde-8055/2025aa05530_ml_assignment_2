@@ -152,16 +152,18 @@ def train_xgboost(X_train, y_train, X_test, y_test):
     num_classes = len(np.unique(y_train))
 
     model = XGBClassifier(
-        n_estimators=300,
+        n_estimators=50,          # reduce
         learning_rate=0.1,
-        max_depth=6,
+        max_depth=4,              # reduce
         subsample=0.9,
         colsample_bytree=0.9,
         objective="multi:softprob",
         num_class=num_classes,
         eval_metric="mlogloss",
-        random_state=42
+        random_state=42,
+        n_jobs=1                  # IMPORTANT for Streamlit cloud
     )
+
 
     model.fit(X_train, y_train)
 
